@@ -6,22 +6,25 @@ const {
   GraphQLInt,
   GraphQLSchema,
   GraphQLString,
-  GraphQLID
+  GraphQLID,
+  GraphQLList,
+  GraphQLNonNull
 } = graphql;
-const fakePhotoDatabase = [
-  {
-    caption: 'aa',
-    imageURL:
-      'https://phongspho.s3.amazonaws.com/meal_images/20170620_161951.jpg',
-    id: 6
-  },
-  {
-    caption: 'aa',
-    imageURL:
-      'https://phongspho.s3.amazonaws.com/meal_images/20170620_164034.jpg',
-    id: 7
-  }
-];
+const Photo = require('../models/photo');
+// const fakePhotoDatabase = [
+//   {
+//     caption: 'aa',
+//     imageURL:
+//       'https://phongspho.s3.amazonaws.com/meal_images/20170620_161951.jpg',
+//     id: 6
+//   },
+//   {
+//     caption: 'aa',
+//     imageURL:
+//       'https://phongspho.s3.amazonaws.com/meal_images/20170620_164034.jpg',
+//     id: 7
+//   }
+// ];
 
 const PhotoType = new GraphQLObjectType({
   name: 'Photo',
@@ -43,13 +46,42 @@ const RootQuery = new GraphQLObjectType({
       resolve(parent, args) {
         // here we define how to get data from database source
         // this will return the  photo with id passed in argument passed by user
-        console.log('aa');
         return fakePhotoDatabase.find(photo => photo.id === args.id);
+      }
+    },
+    photos: {
+      type: new GraphQLList(PhotoType),
+      resolve() {
+        return fakePhotoDatabase;
+      }
+    }
+  }
+});
+
+const Mutation = new GraphQLObjectType({
+  name: 'Mutation',
+  fields: {
+    addPhoto: {
+      type: PhotoType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLInt) },
+        caption: { type: new GraphQLNonNull(GraphQLString) },
+        imageURL: { type: new GraphQLNonNull(GraphQLString) }
+      },
+      resolve(parent, args) {
+        const photo = new Photo({
+          id: args.id,
+          caption: args.caption,
+          imageURL: args.imageURL
+        });
+        console.log('saving');
+        return photo.save();
       }
     }
   }
 });
 
 module.exports = new GraphQLSchema({
-  query: RootQuery
+  query: RootQuery,
+  mutation: Mutation
 });
